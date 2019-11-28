@@ -8,8 +8,8 @@ python estimate_w1.py --dataroot1 data/tabby_cat_n02123045/ --dataroot2 data/tig
 
 It is assumed that the `dataroot` directories will be flat and contain only images. The output plot of W1 estimate versus epoch number is shown below:
 
-![Convergence](https://i.imgur.com/3dMglmT.png)
+![Convergence](https://i.imgur.com/Rd0yDGn.png)
 
-The approximate W1 distance in this case was 1.29, though from the above plot we see the estimator did not fully converge.
+The approximate W1 distance in this case was 1.46, and from the above plot it seems as though the estimator has roughly converged after 100 epochs.
 
 Note this code uses the MLP and DCGAN critic from [Martin Arjovsky's repository here](https://github.com/martinarjovsky/WassersteinGAN/), and also note that this code uses clipping to maintain a k-Lipschitz constraint (the discriminator/critic is not strictly 1-Lipschitz like it should be in the Kantorovich formulation).
