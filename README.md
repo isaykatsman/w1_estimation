@@ -1,4 +1,4 @@
-# W1 Estimation
+# Wasserstein-1 (Earth Mover's Distance) Estimation
 W1(P,Q) estimation given samples from two distributions P, Q. For example, to estimate W1 distance between the ImageNet train classes of 'tabby cat' and 'tiger' (each of which have 1300 images), we can run the following:
 
 ```shell
