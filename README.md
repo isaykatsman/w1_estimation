@@ -12,4 +12,4 @@ It is assumed that the `dataroot` directories will be flat and contain only imag
 
 The approximate W1 distance in this case was 1.29, though from the above plot we see the estimator did not fully converge.
 
-Note this code uses the MLP and DCGAN critic from [Martin Arjovsky's repository here](https://github.com/martinarjovsky/WassersteinGAN/).
+Note this code uses the MLP and DCGAN critic from [Martin Arjovsky's repository here](https://github.com/martinarjovsky/WassersteinGAN/), and also note that this code uses clipping to maintain a k-Lipschitz constraint (the discriminator/critic is not strictly Lip-1 like it should be in the Kantorovich formulation).
