@@ -3,7 +3,7 @@ W1(P,Q) estimation given samples from two distributions P, Q. For example, to es
 
 ```shell
 python estimate_w1.py --dataroot1 data/tabby_cat_n02123045/ --dataroot2 data/tiger_n02129604/ \
---batchSize 50 --nepochs 25 --cuda
+--batchSize 50 --nepochs 100 --cuda
 ```
 
 It is assumed that the `dataroot` directories will be flat and contain only images. The output plot of W1 estimate versus epoch number is shown below:
