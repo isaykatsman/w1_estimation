@@ -192,7 +192,7 @@ if __name__=="__main__":
 
             # add gradient penalty if necessary
             if opt.do_gp:
-                gradient_penalty = calc_gradient_penalty(netD, inputv.data, fake.data)
+                gradient_penalty = calc_gradient_penalty(netD, real_data.data, fake_data.data)
                 gradient_penalty.backward()
 
             errD = errD_real - errD_fake + (0 if not opt.do_gp else gradient_penalty)
