@@ -46,6 +46,7 @@ if __name__=="__main__":
     parser.add_argument('--noBN', action='store_true', help='use batchnorm or not (only for DCGAN)')
     parser.add_argument('--mlp_D', action='store_true', help='use MLP for D')
     parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
+    parser.add_argument('--do_gp', action='store_true', help='do gradient penalty')
     opt = parser.parse_args()
     print(opt)
 
@@ -128,6 +129,29 @@ if __name__=="__main__":
     else:
         optimizerD = optim.RMSprop(netD.parameters(), lr = opt.lrD)
 
+    # calculate gradient penalty
+    def calc_gradient_penalty(netD, real_data, fake_data):
+        alpha = torch.rand(opt.batchSize, 1)
+        alpha = alpha.expand(opt.batchSize, int(real_data.nelement()/opt.batchSize)).contiguous().view(opt.batchSize, 3, opt.imageSize, opt.imageSize)
+        alpha = alpha.cuda() if opt.cuda else alpha
+
+        interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+
+        if opt.cuda:
+            interpolates = interpolates.cuda()
+        interpolates = autograd.Variable(interpolates, requires_grad=True)
+
+        disc_interpolates = netD(interpolates)
+
+        gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                                grad_outputs=torch.ones(disc_interpolates.size()).cuda() if opt.cuda else torch.ones(
+                                    disc_interpolates.size()),
+                                create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradients = gradients.view(gradients.size(0), -1)
+
+        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * 10 # LAMBDA=10 hyperparam
+        return gradient_penalty
+
     epoch_hist = []
     for epoch in range(opt.nepochs):
         print(f'\nrunning epoch {epoch} of W1 estimation...')
@@ -143,8 +167,9 @@ if __name__=="__main__":
                 print(f'epoch {epoch}: {i}/{per_epoch_iters} iterations')
 
             # clamp parameters to a cube
-            for p in netD.parameters():
-                p.data.clamp_(opt.clamp_lower, opt.clamp_upper)
+            if not opt.do_gp:
+                for p in netD.parameters():
+                    p.data.clamp_(opt.clamp_lower, opt.clamp_upper)
 
             # clear gradients from previous backward
             netD.zero_grad()
@@ -165,11 +190,17 @@ if __name__=="__main__":
             errD_fake = netD(fake_data)
             errD_fake.backward(mone)
 
-            errD = errD_real - errD_fake
+            # add gradient penalty if necessary
+            if opt.do_gp:
+                gradient_penalty = calc_gradient_penalty(netD, inputv.data, fake.data)
+                gradient_penalty.backward()
+
+            errD = errD_real - errD_fake + (0 if not opt.do_gp else gradient_penalty)
+            Wasserstein_D = errD_fake - errD_real
 
             # print wasserstein estimate
             if i % opt.print_every_itr == 0:
-                print(f'per batch W1 estimate: {-errD.data[0]}')
+                print(f'per batch W1 estimate: {-Wasserstein_D.data[0]}')
 
             # step with gradients
             optimizerD.step()
@@ -194,7 +225,8 @@ if __name__=="__main__":
                 errD_real = netD(real_data)
                 errD_fake = netD(fake_data)
                 errD = errD_real - errD_fake
-                lst_avg.append(-errD.item()) # note negative
+                Wasserstein_D = -errD
+                lst_avg.append(Wasserstein_D.item()) # note negative
 
         print(f'W1 estimate: {sum(lst_avg)/len(lst_avg)}')
         epoch_hist.append(sum(lst_avg)/len(lst_avg))
